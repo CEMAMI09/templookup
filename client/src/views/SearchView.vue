@@ -7,7 +7,7 @@ import { api, ApiError } from "@/api/client";
 import { rememberContact } from "@/composables/contactCache";
 import { useRecentContacts } from "@/composables/recent";
 import { display, location } from "@/lib/format";
-import { transcribeAudio } from "@/lib/localRecognition";
+import { transcribeAudio, voiceErrorMessage } from "@/lib/localRecognition";
 import AppHeader from "@/components/AppHeader.vue";
 import BadgeScan from "@/components/BadgeScan.vue";
 import UiAlert from "@/components/UiAlert.vue";
@@ -150,9 +150,9 @@ async function finishVoice(blob: Blob) {
     }
     query.value = text;
     submit();
-  } catch {
+  } catch (error) {
     speechStatus.value = "";
-    speechError.value = "Voice transcription failed. Wait for the model to finish loading, then try again. You can still type the name.";
+    speechError.value = voiceErrorMessage(error);
   }
 }
 

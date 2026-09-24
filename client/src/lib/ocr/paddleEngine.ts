@@ -6,8 +6,33 @@ type PaddleHandle = Awaited<ReturnType<typeof PaddleOCR.create>>;
 let enginePromise: Promise<PaddleHandle> | null = null;
 let initMs = 0;
 
+const OCR_ASSETS = [
+  "/ocr-models/PP-OCRv5_mobile_det_onnx_infer.tar",
+  "/ocr-models/PP-OCRv5_mobile_rec_onnx_infer.tar",
+  "/ort/ort-wasm-simd-threaded.jsep.wasm",
+  "/ort/ort-wasm-simd-threaded.jsep.mjs",
+];
+
+async function assertOcrAssets(): Promise<void> {
+  const failures: string[] = [];
+  await Promise.all(
+    OCR_ASSETS.map(async (url) => {
+      try {
+        const response = await fetch(url, { method: "HEAD" });
+        if (!response.ok) failures.push(`${url} returned ${response.status}`);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : "request failed";
+        failures.push(`${url} (${detail})`);
+      }
+    }),
+  );
+  if (failures.length > 0) {
+    throw new Error(`PaddleOCR files failed to load. ${failures.join("; ")}`);
+  }
+}
+
 function createHandle(): Promise<PaddleHandle> {
-  return PaddleOCR.create({
+  return assertOcrAssets().then(() => PaddleOCR.create({
     lang: "en",
     ocrVersion: "PP-OCRv5",
     worker: true,
@@ -22,9 +47,10 @@ function createHandle(): Promise<PaddleHandle> {
       backend: "wasm",
       wasmPaths: "/ort/",
       simd: true,
-      numThreads: globalThis.crossOriginIsolated ? Math.min(2, globalThis.navigator?.hardwareConcurrency || 1) : 1,
+      numThreads: 1,
     },
-  });
+    }),
+  );
 }
 
 export function createPaddleEngine(): OcrEngine {

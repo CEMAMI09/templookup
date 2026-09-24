@@ -8,6 +8,7 @@ import { getOcrEngine } from "@/lib/ocr/engines";
 import { frameChanged, frameIsUsable, frameWaitReason, sampleFrame } from "@/lib/ocr/frameQuality";
 import { applyContactChecks, checkCandidate, verificationQueries, type ContactCheck } from "@/lib/ocr/contactMatch";
 import { extractAttendeeName } from "@/lib/ocr/nameExtraction";
+import { diagnoseScan, scanStatus, type ScanDiagnosis } from "@/lib/ocr/scanDiagnostics";
 import { ScanSession, singleLineName } from "@/lib/ocr/scanSession";
 import { NameStabilizer } from "@/lib/ocr/stability";
 import type { NameDecision, OcrEngineId, OcrLine, OcrResult } from "@/lib/ocr/types";
@@ -36,6 +37,8 @@ const activeEngine = ref<OcrEngineId>("paddle");
 const autoSearched = ref(false);
 const crmChecks = ref<ContactCheck[]>([]);
 const stages = ref(emptyStages());
+const diagnosis = ref<ScanDiagnosis | "">("");
+const engineError = ref("");
 const showManualEntry = computed(() => phase.value === "error" || phase.value === "review" || stages.value.attempts >= 3);
 
 let stream: MediaStream | null = null;
@@ -70,6 +73,8 @@ function emptyStages() {
     verifyMs: 0,
     totalMs: 0,
     waitReason: "",
+    imageWidth: 0,
+    imageHeight: 0,
   };
 }
 
@@ -136,6 +141,8 @@ function resetResult() {
   autoSearched.value = false;
   crmChecks.value = [];
   stages.value = emptyStages();
+  diagnosis.value = "";
+  engineError.value = "";
   verificationCache.clear();
   stabilizer.reset();
   if (frameUrl.value) URL.revokeObjectURL(frameUrl.value);
@@ -144,12 +151,12 @@ function resetResult() {
 
 function scheduleWatch() {
   window.clearTimeout(watchTimer);
-  if (stopped || !open.value || scanSession.isFrozen || usingUpload.value || phase.value === "review") return;
+  if (stopped || !open.value || scanSession.isFrozen || usingUpload.value || phase.value === "review" || phase.value === "error") return;
   watchTimer = window.setTimeout(() => void watchFrame(), 200);
 }
 
 async function watchFrame() {
-  if (stopped || busy || scanSession.isFrozen || scanSession.userEdited || usingUpload.value || phase.value === "review") return;
+  if (stopped || busy || scanSession.isFrozen || scanSession.userEdited || usingUpload.value || phase.value === "review" || phase.value === "error") return;
   const source = video.value;
   if (!source || !source.videoWidth) {
     scheduleWatch();
@@ -179,6 +186,8 @@ async function watchFrame() {
   }
   const frame = captureFrame(source, source.videoWidth, source.videoHeight);
   if (!frame) {
+    diagnosis.value = "capture";
+    setStatus(scanStatus("capture"));
     scheduleWatch();
     return;
   }
@@ -187,7 +196,7 @@ async function watchFrame() {
   busy = true;
   const found = await recognize(frame, true, generation);
   busy = false;
-  if (!found && !stopped && !scanSession.isFrozen) {
+  if (!found && !stopped && !scanSession.isFrozen && !scanSession.userEdited && diagnosis.value !== "engine") {
     failedSample = sample.pixels;
     stableFrames = 0;
     scheduleWatch();
@@ -246,6 +255,8 @@ async function recognize(frame: HTMLCanvasElement, fromCamera: boolean, scanGene
     ocrMs.value = Math.round(result.processingTimeMs);
     stages.value.ocrMs += Math.round(result.processingTimeMs);
     stages.value.initMs = initMs.value;
+    stages.value.imageWidth = result.imageWidth;
+    stages.value.imageHeight = result.imageHeight;
     drawOverlay(frame, result);
     const stable = fromCamera ? stabilizer.observe(next) : { name: next.selected, ready: next.reliable, uncertain: !next.reliable, options: next.candidates.map((item) => item.text) };
     const payload = scanSession.complete(scanGeneration, { selected: stable.name, reliable: stable.ready });
@@ -254,23 +265,42 @@ async function recognize(frame: HTMLCanvasElement, fromCamera: boolean, scanGene
     name.value = payload.fieldValue;
     stages.value.totalMs = Math.round(performance.now() - openedAt);
     totalMs.value = stages.value.totalMs;
+    const outcome = diagnoseScan({
+      captured: true,
+      engineError: result.lines.length === 0 ? engineError.value || null : null,
+      lineCount: result.lines.length,
+      selected: payload.fieldValue || null,
+      reliable: stable.ready,
+    });
+    diagnosis.value = outcome;
+    if (outcome === "engine") {
+      phase.value = "error";
+      setStatus(scanStatus("engine", engineError.value));
+      window.clearTimeout(watchTimer);
+      return false;
+    }
     if (stable.ready && payload.searchQuery) {
       publish(payload.searchQuery);
       return true;
     }
     if (payload.fieldValue) {
       phase.value = "review";
-      setStatus("Couldn't identify the name. Try again.");
+      setStatus(scanStatus("name-unreliable"));
       window.clearTimeout(watchTimer);
       return true;
     }
     phase.value = fromCamera ? "watching" : "review";
-    setStatus("No readable text found. Move closer or try again.");
+    const rejected = next.rejected.map((item) => item.text).filter(Boolean).slice(0, 3).join(", ");
+    setStatus(scanStatus(outcome === "empty-ocr" ? "empty-ocr" : "name-rejected", rejected));
     return false;
-  } catch {
+  } catch (error) {
     if (scanGeneration !== generation || scanSession.isFrozen) return false;
+    const detail = error instanceof Error ? error.message : "The badge reader stopped.";
+    engineError.value = detail;
+    diagnosis.value = "engine";
     phase.value = "error";
-    setStatus("Scanner unavailable. Please try again.");
+    setStatus(scanStatus("engine", detail));
+    window.clearTimeout(watchTimer);
     return false;
   }
 }
@@ -325,7 +355,10 @@ function warmEngine() {
       initMs.value = Math.round(ready.elapsedMs || performance.now() - started);
       stages.value.initMs = initMs.value;
     })
-    .catch(() => undefined);
+    .catch((error: unknown) => {
+      engineError.value = error instanceof Error ? error.message : "The badge reader did not start.";
+      diagnosis.value = "engine";
+    });
 }
 
 async function readWithFallback(blob: Blob): Promise<OcrResult> {
@@ -341,8 +374,14 @@ async function readWithFallback(blob: Blob): Promise<OcrResult> {
       const ready = await fallback.initialize();
       initMs.value = Math.round(ready.elapsedMs);
       activeEngine.value = "tesseract";
-      status.value = "Scanner unavailable. Please try again.";
-      return fallback.recognize(blob);
+      const detail = error instanceof Error ? error.message : "PaddleOCR did not start.";
+      engineError.value = detail;
+      try {
+        return await fallback.recognize(blob);
+      } catch (fallbackError) {
+        const fallbackDetail = fallbackError instanceof Error ? fallbackError.message : "Tesseract did not start.";
+        throw new Error(`PaddleOCR failed: ${detail} Tesseract failed: ${fallbackDetail}`);
+      }
     }
     throw error;
   }
@@ -532,8 +571,11 @@ onBeforeUnmount(stop);
             <div><dt class="text-muted">Name check</dt><dd>{{ stages.verifyMs }} ms</dd></div>
             <div><dt class="text-muted">Open to result</dt><dd>{{ stages.totalMs }} ms</dd></div>
             <div><dt class="text-muted">Automatic search</dt><dd>{{ autoSearched ? "Yes" : "No" }}</dd></div>
+            <div><dt class="text-muted">Failure</dt><dd>{{ diagnosis || "None" }}</dd></div>
+            <div><dt class="text-muted">Captured size</dt><dd>{{ stages.imageWidth && stages.imageHeight ? `${stages.imageWidth}×${stages.imageHeight}` : "Not captured" }}</dd></div>
           </dl>
           <p v-if="stages.waitReason" class="mt-2 text-sm text-muted">{{ stages.waitReason }}</p>
+          <p v-if="engineError" class="mt-2 text-sm text-muted">{{ engineError }}</p>
         </section>
         <section class="border-t border-line pt-4">
           <p class="text-sm font-bold">Name selection</p>

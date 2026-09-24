@@ -1,12 +1,24 @@
-import { pipeline, type AutomaticSpeechRecognitionPipeline } from "@huggingface/transformers";
+import { env, pipeline, type AutomaticSpeechRecognitionPipeline } from "@huggingface/transformers";
 import { createWorker, PSM } from "tesseract.js";
+
+// Same-origin copies of the quantized Whisper files. Remote Hub downloads redirect to
+// us.aws.cdn.hf.co, which production CSP does not allow.
+env.allowLocalModels = true;
+env.allowRemoteModels = false;
+env.localModelPath = "/models/";
 
 let speechModel: Promise<AutomaticSpeechRecognitionPipeline> | null = null;
 let textWorker: ReturnType<typeof createWorker> | null = null;
 
 function whisper() {
-  speechModel ??= pipeline("automatic-speech-recognition", "Xenova/whisper-tiny.en");
+  speechModel ??= pipeline("automatic-speech-recognition", "Xenova/whisper-tiny.en", { dtype: "q8" });
   return speechModel;
+}
+
+export function voiceErrorMessage(error: unknown): string {
+  const detail = error instanceof Error ? error.message.trim() : "";
+  if (!detail) return "Voice transcription failed. You can still type the name.";
+  return `Voice transcription failed. ${detail}`;
 }
 
 function nameReader() {

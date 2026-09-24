@@ -100,6 +100,17 @@ describe("inquiry notes", () => {
   });
 });
 
+describe("content security policy", () => {
+  it("keeps speech-model downloads on this origin", async () => {
+    const response = await request(app).get("/api/health");
+    const policy = String(response.headers["content-security-policy"]);
+    expect(policy).toContain("connect-src 'self' blob: https://cdn.jsdelivr.net");
+    expect(policy).not.toContain("huggingface.co");
+    expect(policy).not.toContain("hf.co");
+    expect(policy).not.toContain("*");
+  });
+});
+
 describe("API access", () => {
   it("blocks contact search without a staff session and hides the token", async () => {
     const response = await request(app).get("/api/contacts/search?q=Jordan");

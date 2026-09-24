@@ -1,0 +1,67 @@
+"filename", "language", "JSON with Comments", "HTML", "TypeScript", "JSON", "Vue", "Docker", "Markdown", "PostCSS", "comment", "blank", "total"
+"/Users/user/Documents/AAOPTOM Website/Dockerfile", "Docker", 0, 0, 0, 0, 0, 9, 0, 0, 0, 1, 10
+"/Users/user/Documents/AAOPTOM Website/README.md", "Markdown", 0, 0, 0, 0, 0, 0, 68, 0, 0, 38, 106
+"/Users/user/Documents/AAOPTOM Website/client/env.d.ts", "TypeScript", 0, 0, 29, 0, 0, 0, 0, 0, 1, 7, 37
+"/Users/user/Documents/AAOPTOM Website/client/index.html", "HTML", 0, 30, 0, 0, 0, 0, 0, 0, 0, 1, 31
+"/Users/user/Documents/AAOPTOM Website/client/src/App.vue", "Vue", 0, 0, 0, 0, 6, 0, 0, 0, 0, 2, 8
+"/Users/user/Documents/AAOPTOM Website/client/src/api/client.ts", "TypeScript", 0, 0, 35, 0, 0, 0, 0, 0, 0, 6, 41
+"/Users/user/Documents/AAOPTOM Website/client/src/components/AppHeader.vue", "Vue", 0, 0, 0, 0, 45, 0, 0, 0, 0, 4, 49
+"/Users/user/Documents/AAOPTOM Website/client/src/components/BadgeScan.vue", "Vue", 0, 0, 0, 0, 540, 0, 0, 0, 0, 28, 568
+"/Users/user/Documents/AAOPTOM Website/client/src/components/UiAlert.vue", "Vue", 0, 0, 0, 0, 25, 0, 0, 0, 0, 4, 29
+"/Users/user/Documents/AAOPTOM Website/client/src/components/UiButton.vue", "Vue", 0, 0, 0, 0, 24, 0, 0, 0, 0, 2, 26
+"/Users/user/Documents/AAOPTOM Website/client/src/composables/contactCache.ts", "TypeScript", 0, 0, 8, 0, 0, 0, 0, 0, 0, 4, 12
+"/Users/user/Documents/AAOPTOM Website/client/src/composables/recent.ts", "TypeScript", 0, 0, 22, 0, 0, 0, 0, 0, 0, 6, 28
+"/Users/user/Documents/AAOPTOM Website/client/src/composables/session.ts", "TypeScript", 0, 0, 58, 0, 0, 0, 0, 0, 0, 8, 66
+"/Users/user/Documents/AAOPTOM Website/client/src/composables/theme.ts", "TypeScript", 0, 0, 17, 0, 0, 0, 0, 0, 0, 6, 23
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/format.ts", "TypeScript", 0, 0, 19, 0, 0, 0, 0, 0, 0, 3, 22
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/localRecognition.ts", "TypeScript", 0, 0, 158, 0, 0, 0, 0, 0, 0, 15, 173
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/contactMatch.test.ts", "TypeScript", 0, 0, 52, 0, 0, 0, 0, 0, 0, 7, 59
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/contactMatch.ts", "TypeScript", 0, 0, 125, 0, 0, 0, 0, 0, 0, 12, 137
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/engines.ts", "TypeScript", 0, 0, 12, 0, 0, 0, 0, 0, 0, 3, 15
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/frameQuality.ts", "TypeScript", 0, 0, 65, 0, 0, 0, 0, 0, 0, 9, 74
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/nameExtraction.test.ts", "TypeScript", 0, 0, 101, 0, 0, 0, 0, 0, 0, 13, 114
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/nameExtraction.ts", "TypeScript", 0, 0, 377, 0, 0, 0, 0, 0, 0, 38, 415
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/paddleEngine.ts", "TypeScript", 0, 0, 101, 0, 0, 0, 0, 0, 0, 6, 107
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/scanSession.test.ts", "TypeScript", 0, 0, 49, 0, 0, 0, 0, 0, 0, 7, 56
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/scanSession.ts", "TypeScript", 0, 0, 46, 0, 0, 0, 0, 0, 1, 11, 58
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/stability.ts", "TypeScript", 0, 0, 53, 0, 0, 0, 0, 0, 0, 6, 59
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/tesseractEngine.ts", "TypeScript", 0, 0, 94, 0, 0, 0, 0, 0, 0, 8, 102
+"/Users/user/Documents/AAOPTOM Website/client/src/lib/ocr/types.ts", "TypeScript", 0, 0, 38, 0, 0, 0, 0, 0, 4, 7, 49
+"/Users/user/Documents/AAOPTOM Website/client/src/main.ts", "TypeScript", 0, 0, 5, 0, 0, 0, 0, 0, 0, 2, 7
+"/Users/user/Documents/AAOPTOM Website/client/src/router.ts", "TypeScript", 0, 0, 27, 0, 0, 0, 0, 0, 0, 3, 30
+"/Users/user/Documents/AAOPTOM Website/client/src/styles/theme.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 187, 0, 25, 212
+"/Users/user/Documents/AAOPTOM Website/client/src/views/ContactFormView.vue", "Vue", 0, 0, 0, 0, 193, 0, 0, 0, 0, 13, 206
+"/Users/user/Documents/AAOPTOM Website/client/src/views/ContactView.vue", "Vue", 0, 0, 0, 0, 167, 0, 0, 0, 0, 10, 177
+"/Users/user/Documents/AAOPTOM Website/client/src/views/InquiryView.vue", "Vue", 0, 0, 0, 0, 232, 0, 0, 0, 0, 23, 255
+"/Users/user/Documents/AAOPTOM Website/client/src/views/LoginView.vue", "Vue", 0, 0, 0, 0, 83, 0, 0, 0, 0, 4, 87
+"/Users/user/Documents/AAOPTOM Website/client/src/views/SearchView.vue", "Vue", 0, 0, 0, 0, 263, 0, 0, 0, 0, 23, 286
+"/Users/user/Documents/AAOPTOM Website/client/tsconfig.json", "JSON with Comments", 23, 0, 0, 0, 0, 0, 0, 0, 0, 1, 24
+"/Users/user/Documents/AAOPTOM Website/package-lock.json", "JSON", 0, 0, 0, 5976, 0, 0, 0, 0, 0, 1, 5977
+"/Users/user/Documents/AAOPTOM Website/package.json", "JSON", 0, 0, 0, 51, 0, 0, 0, 0, 0, 1, 52
+"/Users/user/Documents/AAOPTOM Website/server/src/app.ts", "TypeScript", 0, 0, 112, 0, 0, 0, 0, 0, 0, 8, 120
+"/Users/user/Documents/AAOPTOM Website/server/src/auth/staff-store.ts", "TypeScript", 0, 0, 71, 0, 0, 0, 0, 0, 0, 9, 80
+"/Users/user/Documents/AAOPTOM Website/server/src/config.ts", "TypeScript", 0, 0, 65, 0, 0, 0, 0, 0, 0, 8, 73
+"/Users/user/Documents/AAOPTOM Website/server/src/coto/live.ts", "TypeScript", 0, 0, 299, 0, 0, 0, 0, 0, 0, 26, 325
+"/Users/user/Documents/AAOPTOM Website/server/src/coto/mock.ts", "TypeScript", 0, 0, 215, 0, 0, 0, 0, 0, 0, 13, 228
+"/Users/user/Documents/AAOPTOM Website/server/src/coto/normalize.ts", "TypeScript", 0, 0, 139, 0, 0, 0, 0, 0, 1, 18, 158
+"/Users/user/Documents/AAOPTOM Website/server/src/coto/types.ts", "TypeScript", 0, 0, 52, 0, 0, 0, 0, 0, 0, 7, 59
+"/Users/user/Documents/AAOPTOM Website/server/src/errors.ts", "TypeScript", 0, 0, 44, 0, 0, 0, 0, 0, 0, 4, 48
+"/Users/user/Documents/AAOPTOM Website/server/src/index.ts", "TypeScript", 0, 0, 23, 0, 0, 0, 0, 0, 0, 3, 26
+"/Users/user/Documents/AAOPTOM Website/server/src/inquiries/service.ts", "TypeScript", 0, 0, 143, 0, 0, 0, 0, 0, 0, 15, 158
+"/Users/user/Documents/AAOPTOM Website/server/src/middleware/auth.ts", "TypeScript", 0, 0, 16, 0, 0, 0, 0, 0, 0, 3, 19
+"/Users/user/Documents/AAOPTOM Website/server/src/routes/auth.ts", "TypeScript", 0, 0, 79, 0, 0, 0, 0, 0, 0, 10, 89
+"/Users/user/Documents/AAOPTOM Website/server/src/routes/contacts.ts", "TypeScript", 0, 0, 213, 0, 0, 0, 0, 0, 0, 15, 228
+"/Users/user/Documents/AAOPTOM Website/server/src/scripts/add-staff.ts", "TypeScript", 0, 0, 20, 0, 0, 0, 0, 0, 0, 4, 24
+"/Users/user/Documents/AAOPTOM Website/server/src/scripts/check-coto.ts", "TypeScript", 0, 0, 44, 0, 0, 0, 0, 0, 0, 5, 49
+"/Users/user/Documents/AAOPTOM Website/server/src/scripts/list-staff.ts", "TypeScript", 0, 0, 12, 0, 0, 0, 0, 0, 0, 2, 14
+"/Users/user/Documents/AAOPTOM Website/server/src/types/session.d.ts", "TypeScript", 0, 0, 8, 0, 0, 0, 0, 0, 0, 2, 10
+"/Users/user/Documents/AAOPTOM Website/server/src/validation.ts", "TypeScript", 0, 0, 135, 0, 0, 0, 0, 0, 0, 14, 149
+"/Users/user/Documents/AAOPTOM Website/server/test/app.test.ts", "TypeScript", 0, 0, 184, 0, 0, 0, 0, 0, 0, 22, 206
+"/Users/user/Documents/AAOPTOM Website/server/tsconfig.json", "JSON with Comments", 17, 0, 0, 0, 0, 0, 0, 0, 0, 1, 18
+"/Users/user/Documents/AAOPTOM Website/shared/inquiry-note.ts", "TypeScript", 0, 0, 85, 0, 0, 0, 0, 0, 0, 13, 98
+"/Users/user/Documents/AAOPTOM Website/shared/questionnaire.ts", "TypeScript", 0, 0, 187, 0, 0, 0, 0, 0, 6, 7, 200
+"/Users/user/Documents/AAOPTOM Website/shared/types.ts", "TypeScript", 0, 0, 96, 0, 0, 0, 0, 0, 2, 13, 111
+"/Users/user/Documents/AAOPTOM Website/tsconfig.json", "JSON with Comments", 7, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8
+"/Users/user/Documents/AAOPTOM Website/vite.config.ts", "TypeScript", 0, 0, 92, 0, 0, 0, 0, 0, 1, 6, 99
+"/Users/user/Documents/AAOPTOM Website/vitest.config.ts", "TypeScript", 0, 0, 7, 0, 0, 0, 0, 0, 0, 2, 9
+"Total", "-", 47, 30, 3832, 6027, 1578, 9, 68, 187, 16, 599, 12393
