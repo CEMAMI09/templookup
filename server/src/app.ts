@@ -28,7 +28,7 @@ export function createApp(config: AppConfig, crm: Crm = config.crmMode === "live
           imgSrc: ["'self'", "blob:", "data:"],
           mediaSrc: ["'self'", "blob:"],
           workerSrc: ["'self'", "blob:", "https://cdn.jsdelivr.net"],
-          scriptSrc: ["'self'", "'wasm-unsafe-eval'", "blob:", "https://cdn.jsdelivr.net"],
+          scriptSrc: ["'self'", "'wasm-unsafe-eval'", "'unsafe-eval'", "blob:", "https://cdn.jsdelivr.net"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           connectSrc: ["'self'", "blob:", "https://cdn.jsdelivr.net"],
           frameSrc: ["'none'"],

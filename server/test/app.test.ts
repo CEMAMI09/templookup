@@ -105,6 +105,9 @@ describe("content security policy", () => {
     const response = await request(app).get("/api/health");
     const policy = String(response.headers["content-security-policy"]);
     expect(policy).toContain("connect-src 'self' blob: https://cdn.jsdelivr.net");
+    expect(policy).toContain("script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob: https://cdn.jsdelivr.net");
+    expect(policy).toContain("script-src-attr 'none'");
+    expect(policy).not.toContain("default-src 'self' 'unsafe-eval'");
     expect(policy).not.toContain("huggingface.co");
     expect(policy).not.toContain("hf.co");
     expect(policy).not.toContain("*");
