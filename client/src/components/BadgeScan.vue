@@ -5,7 +5,7 @@ import type { ContactSearchResponse } from "@shared/types";
 import { api } from "@/api/client";
 import UiButton from "./UiButton.vue";
 import { getOcrEngine } from "@/lib/ocr/engines";
-import { fittedSize, frameChanged, frameIsUsable, frameWaitReason, sampleFrame } from "@/lib/ocr/frameQuality";
+import { captureLimit, fittedSize, frameChanged, frameIsUsable, frameWaitReason, isHandheld, sampleFrame } from "@/lib/ocr/frameQuality";
 import { applyContactChecks, checkCandidate, verificationQueries, type ContactCheck } from "@/lib/ocr/contactMatch";
 import { extractAttendeeName } from "@/lib/ocr/nameExtraction";
 import { diagnoseScan, scanStatus, type ScanDiagnosis } from "@/lib/ocr/scanDiagnostics";
@@ -56,6 +56,8 @@ let firstFrameAt = 0;
 let stableFrames = 0;
 let generation = 0;
 let publishedQuery = "";
+const handheldScan = isHandheld();
+const motionLimit = handheldScan ? 26 : 12;
 
 function setStatus(message: string) {
   if (status.value !== message) status.value = message;
@@ -99,9 +101,9 @@ async function start() {
     stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: "environment" },
-        width: { ideal: 1280, max: 1920 },
-        height: { ideal: 960, max: 1920 },
-        frameRate: { ideal: 30, max: 30 },
+        width: handheldScan ? { ideal: 640, max: 1280 } : { ideal: 1280, max: 1920 },
+        height: handheldScan ? { ideal: 480, max: 1280 } : { ideal: 960, max: 1920 },
+        frameRate: { ideal: handheldScan ? 24 : 30, max: 30 },
       },
       audio: false,
     });
@@ -158,7 +160,7 @@ function resetResult() {
 function scheduleWatch() {
   window.clearTimeout(watchTimer);
   if (stopped || !open.value || scanSession.isFrozen || usingUpload.value || phase.value === "review" || phase.value === "error") return;
-  watchTimer = window.setTimeout(() => void watchFrame(), 200);
+  watchTimer = window.setTimeout(() => void watchFrame(), handheldScan ? 50 : 200);
 }
 
 async function watchFrame() {
@@ -174,18 +176,18 @@ async function watchFrame() {
   }
   const sample = sampleFrame(source, source.videoWidth, source.videoHeight, lastSample);
   if (sample) lastSample = sample.pixels;
-  const usable = Boolean(sample && frameIsUsable(sample) && frameChanged(sample.pixels, failedSample));
+  const usable = Boolean(sample && frameIsUsable(sample, motionLimit) && frameChanged(sample.pixels, failedSample, handheldScan ? 4 : 8));
   if (!sample || !usable) {
     stableFrames = 0;
     if (phase.value !== "reading" && sample) {
-      stages.value.waitReason = frameWaitReason(sample);
+      stages.value.waitReason = frameWaitReason(sample, motionLimit);
       setStatus(sample.sharpness > 8 ? "Hold badge steady" : "Point camera at badge");
     }
     scheduleWatch();
     return;
   }
   stableFrames += 1;
-  if (stableFrames < 2) {
+  if (!handheldScan && stableFrames < 2) {
     setStatus("Hold badge steady");
     scheduleWatch();
     return;
@@ -429,7 +431,7 @@ function toggleAdvanced() {
 
 function captureFrame(source: CanvasImageSource, width: number, height: number): HTMLCanvasElement | null {
   if (!width || !height) return null;
-  const fitted = fittedSize(width, height);
+  const fitted = fittedSize(width, height, captureLimit());
   const canvas = document.createElement("canvas");
   canvas.width = fitted.width;
   canvas.height = fitted.height;

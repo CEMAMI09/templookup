@@ -9,8 +9,20 @@ export interface FrameSample {
 
 const SAMPLE_WIDTH = 160;
 
-/** Longest side sent to the reader. The detector resizes to this, so a larger capture only adds work. */
+/** Longest side sent to the reader on a desktop camera. The detector resizes to this. */
 export const OCR_MAX_SIDE = 960;
+
+/** Phones and tablets spend most of the wait inside detection. A shorter side is several times faster. */
+export const HANDHELD_MAX_SIDE = 480;
+
+export function isHandheld(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(pointer: coarse)").matches;
+}
+
+export function captureLimit(): number {
+  return isHandheld() ? HANDHELD_MAX_SIDE : OCR_MAX_SIDE;
+}
 
 export function fittedSize(width: number, height: number, maxSide = OCR_MAX_SIDE): { width: number; height: number } {
   if (width <= 0 || height <= 0) return { width: 1, height: 1 };
@@ -66,18 +78,18 @@ export function sampleFrame(source: CanvasImageSource, width: number, height: nu
   return { width: SAMPLE_WIDTH, height: sampleHeight, brightness, sharpness, motion, pixels: gray };
 }
 
-export function frameIsUsable(sample: FrameSample): boolean {
+export function frameIsUsable(sample: FrameSample, motionLimit = 12): boolean {
   const lit = sample.brightness > 35 && sample.brightness < 230;
   const sharp = sample.sharpness > 8;
-  const still = Number.isFinite(sample.motion) && sample.motion < 12;
+  const still = Number.isFinite(sample.motion) && sample.motion < motionLimit;
   return lit && sharp && still;
 }
 
-export function frameWaitReason(sample: FrameSample): string {
+export function frameWaitReason(sample: FrameSample, motionLimit = 12): string {
   if (sample.brightness <= 35) return "The image is too dark.";
   if (sample.brightness >= 230) return "The image is too bright.";
   if (sample.sharpness <= 8) return "The image is blurry.";
-  if (!Number.isFinite(sample.motion) || sample.motion >= 12) return "Hold the badge steady.";
+  if (!Number.isFinite(sample.motion) || sample.motion >= motionLimit) return "Hold the badge steady.";
   return "Hold the badge steady.";
 }
 

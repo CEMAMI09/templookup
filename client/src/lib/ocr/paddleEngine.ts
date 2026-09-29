@@ -1,5 +1,5 @@
 import { PaddleOCR } from "@paddleocr/paddleocr-js";
-import { OCR_MAX_SIDE } from "./frameQuality";
+import { captureLimit } from "./frameQuality";
 import type { OcrBox, OcrEngine, OcrLine } from "./types";
 
 type PaddleHandle = Awaited<ReturnType<typeof PaddleOCR.create>>;
@@ -41,7 +41,7 @@ function createHandle(): Promise<PaddleHandle> {
     textRecognitionModelName: "PP-OCRv5_mobile_rec",
     textDetectionModelAsset: { url: "/ocr-models/PP-OCRv5_mobile_det_onnx_infer.tar" },
     textRecognitionModelAsset: { url: "/ocr-models/PP-OCRv5_mobile_rec_onnx_infer.tar" },
-    textDetLimitSideLen: OCR_MAX_SIDE,
+    textDetLimitSideLen: captureLimit(),
     textDetLimitType: "max",
     textRecognitionBatchSize: 6,
     ortOptions: {
@@ -77,7 +77,7 @@ export function createPaddleEngine(): OcrEngine {
       const bitmap = await createImageBitmap(image);
       try {
         const [result] = await engine.predict(bitmap, {
-          textDetLimitSideLen: OCR_MAX_SIDE,
+          textDetLimitSideLen: captureLimit(),
           textDetLimitType: "max",
         });
         const lines: OcrLine[] = (result?.items ?? []).map((item) => {
