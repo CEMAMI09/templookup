@@ -96,7 +96,7 @@ async function save(acknowledgeDuplicates = false) {
   try {
     if (editing.value) {
       await api(`/api/contacts/${route.params.id}`, { method: "PATCH", body: JSON.stringify(payload()) });
-      await router.push({ name: "contact", params: { id: route.params.id }, query: { ...searchQuery(), updated: "1" } });
+      await router.push({ name: "contact", params: { id: route.params.id }, query: { updated: "1" } });
       return;
     }
     const created = await api<{ contact: Contact }>("/api/contacts", {
@@ -117,10 +117,6 @@ async function save(acknowledgeDuplicates = false) {
   } finally {
     pending.value = false;
   }
-}
-
-function searchQuery() {
-  return typeof route.query.q === "string" && route.query.q ? { q: route.query.q } : {};
 }
 
 onMounted(loadContact);

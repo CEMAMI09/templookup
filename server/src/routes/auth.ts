@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { AppConfig } from "../config.ts";
 import { authenticateStaff, listStaff } from "../auth/staff-store.ts";
 import { AppError } from "../errors.ts";
-import { requireMutationHeader, requireStaff } from "../middleware/auth.ts";
+import { requireMutationHeader } from "../middleware/auth.ts";
 import type { Crm } from "../coto/types.ts";
 
 const attempts = new Map<string, { count: number; resetAt: number }>();
@@ -58,14 +58,26 @@ export function authRouter(config: AppConfig, crm: Crm) {
     }
   });
 
-  router.post("/logout", requireStaff, requireMutationHeader, (req, res, next) => {
+  router.post("/logout", requireMutationHeader, (req, res, next) => {
+    const finish = () => {
+      res.clearCookie("aaoptom.sid", {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: config.nodeEnv === "production",
+      });
+      res.json({ ok: true });
+    };
+    if (!req.session.staffId) {
+      finish();
+      return;
+    }
     req.session.destroy((error) => {
       if (error) {
         next(new AppError(500, "CRM_UNAVAILABLE", "Sign out did not complete. Try again."));
         return;
       }
-      res.clearCookie("aaoptom.sid");
-      res.json({ ok: true });
+      finish();
     });
   });
 

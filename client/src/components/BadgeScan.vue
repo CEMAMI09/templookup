@@ -5,7 +5,7 @@ import type { ContactSearchResponse } from "@shared/types";
 import { api } from "@/api/client";
 import UiButton from "./UiButton.vue";
 import { getOcrEngine } from "@/lib/ocr/engines";
-import { frameChanged, frameIsUsable, frameWaitReason, sampleFrame } from "@/lib/ocr/frameQuality";
+import { fittedSize, frameChanged, frameIsUsable, frameWaitReason, sampleFrame } from "@/lib/ocr/frameQuality";
 import { applyContactChecks, checkCandidate, verificationQueries, type ContactCheck } from "@/lib/ocr/contactMatch";
 import { extractAttendeeName } from "@/lib/ocr/nameExtraction";
 import { diagnoseScan, scanStatus, type ScanDiagnosis } from "@/lib/ocr/scanDiagnostics";
@@ -97,9 +97,15 @@ async function start() {
   }
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280, max: 1920 },
+        height: { ideal: 960, max: 1920 },
+        frameRate: { ideal: 30, max: 30 },
+      },
       audio: false,
     });
+    await preferContinuousFocus(stream);
     if (video.value) {
       video.value.srcObject = stream;
       await video.value.play();
@@ -184,7 +190,9 @@ async function watchFrame() {
     scheduleWatch();
     return;
   }
+  const captureStarted = performance.now();
   const frame = captureFrame(source, source.videoWidth, source.videoHeight);
+  stages.value.captureMs += Math.round(performance.now() - captureStarted);
   if (!frame) {
     diagnosis.value = "capture";
     setStatus(scanStatus("capture"));
@@ -234,16 +242,10 @@ async function recognize(frame: HTMLCanvasElement, fromCamera: boolean, scanGene
   if (scanGeneration !== generation || scanSession.isFrozen || scanSession.userEdited) return false;
   phase.value = "reading";
   setStatus("Scanning badge...");
-  const captureStarted = performance.now();
-  const blob = await canvasToPng(frame);
-  stages.value.captureMs += Math.round(performance.now() - captureStarted);
-  if (showDiagnostics) {
-    if (frameUrl.value) URL.revokeObjectURL(frameUrl.value);
-    frameUrl.value = URL.createObjectURL(blob);
-  }
+  if (showDiagnostics && advancedOpen.value) rememberFrame(frame);
   try {
     stages.value.attempts += 1;
-    const result = await readWithFallback(blob);
+    const result = await readWithFallback(frame);
     if (scanGeneration !== generation || scanSession.isFrozen || scanSession.userEdited) return false;
     const verifyStarted = performance.now();
     setStatus("Identifying attendee...");
@@ -311,21 +313,22 @@ async function verifyCandidates(decision: NameDecision): Promise<NameDecision> {
     crmChecks.value = [];
     return decision;
   }
-  const checks: ContactCheck[] = [];
-  for (const query of queries) {
-    const key = query.toLocaleLowerCase();
-    let contacts = verificationCache.get(key);
-    if (!contacts) {
-      try {
-        const result = await api<ContactSearchResponse>(`/api/contacts/search?q=${encodeURIComponent(query)}&page=1&pageSize=20`);
-        contacts = result.contacts;
-      } catch {
-        contacts = [];
+  const checks = await Promise.all(
+    queries.map(async (query) => {
+      const key = query.toLocaleLowerCase();
+      let contacts = verificationCache.get(key);
+      if (!contacts) {
+        try {
+          const result = await api<ContactSearchResponse>(`/api/contacts/search?q=${encodeURIComponent(query)}&page=1&pageSize=20`);
+          contacts = result.contacts;
+        } catch {
+          contacts = [];
+        }
+        verificationCache.set(key, contacts);
       }
-      verificationCache.set(key, contacts);
-    }
-    checks.push(checkCandidate(query, contacts));
-  }
+      return checkCandidate(query, contacts);
+    }),
+  );
   crmChecks.value = checks;
   return applyContactChecks(decision, checks);
 }
@@ -361,13 +364,13 @@ function warmEngine() {
     });
 }
 
-async function readWithFallback(blob: Blob): Promise<OcrResult> {
+async function readWithFallback(frame: HTMLCanvasElement): Promise<OcrResult> {
   const preferred = await getOcrEngine("paddle");
   try {
     const ready = await preferred.initialize();
     initMs.value = Math.round(ready.elapsedMs);
     activeEngine.value = preferred.id;
-    return await preferred.recognize(blob);
+    return await preferred.recognize(frame);
   } catch (error) {
     if (preferred.id !== "tesseract") {
       const fallback = await getOcrEngine("tesseract");
@@ -377,7 +380,7 @@ async function readWithFallback(blob: Blob): Promise<OcrResult> {
       const detail = error instanceof Error ? error.message : "PaddleOCR did not start.";
       engineError.value = detail;
       try {
-        return await fallback.recognize(blob);
+        return await fallback.recognize(frame);
       } catch (fallbackError) {
         const fallbackDetail = fallbackError instanceof Error ? fallbackError.message : "Tesseract did not start.";
         throw new Error(`PaddleOCR failed: ${detail} Tesseract failed: ${fallbackDetail}`);
@@ -426,15 +429,35 @@ function toggleAdvanced() {
 
 function captureFrame(source: CanvasImageSource, width: number, height: number): HTMLCanvasElement | null {
   if (!width || !height) return null;
-  const maxWidth = 1280;
-  const scale = width > maxWidth ? maxWidth / width : 1;
+  const fitted = fittedSize(width, height);
   const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(width * scale));
-  canvas.height = Math.max(1, Math.round(height * scale));
-  const context = canvas.getContext("2d");
+  canvas.width = fitted.width;
+  canvas.height = fitted.height;
+  const context = canvas.getContext("2d", { alpha: false }) ?? canvas.getContext("2d");
   if (!context) return null;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
   context.drawImage(source, 0, 0, canvas.width, canvas.height);
   return canvas;
+}
+
+function rememberFrame(frame: HTMLCanvasElement) {
+  void canvasToPng(frame).then((blob) => {
+    if (frameUrl.value) URL.revokeObjectURL(frameUrl.value);
+    frameUrl.value = URL.createObjectURL(blob);
+  });
+}
+
+async function preferContinuousFocus(stream: MediaStream) {
+  const track = stream.getVideoTracks()[0];
+  if (!track?.getCapabilities) return;
+  const capabilities = track.getCapabilities() as MediaTrackCapabilities & { focusMode?: string[] };
+  if (!capabilities.focusMode?.includes("continuous")) return;
+  try {
+    await track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] });
+  } catch {
+    // The camera can still scan without a focus lock.
+  }
 }
 
 function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {

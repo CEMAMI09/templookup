@@ -1,4 +1,5 @@
 import type { ApiErrorBody, Contact } from "@shared/types";
+import { notifyUnauthorized } from "./unauthorized";
 
 export class ApiError extends Error {
   status: number;
@@ -34,6 +35,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const payload = (await response.json().catch(() => null)) as ApiErrorBody | T | null;
   if (!response.ok) {
     const error = payload && typeof payload === "object" && "error" in payload ? payload.error : undefined;
+    if (response.status === 401 && path !== "/api/auth/login" && path !== "/api/auth/logout") notifyUnauthorized();
     throw new ApiError(response.status, error);
   }
   return payload as T;

@@ -23,5 +23,17 @@ export function useRecentContacts() {
     recent.value = recent.value.map((item) => (item.id === id ? { ...item, inquirySaved: true } : item));
   }
 
-  return { recent, remember, markInquiry };
+  function forget(id: string) {
+    recent.value = recent.value.filter((item) => item.id !== id);
+  }
+
+  function clear() {
+    recent.value = [];
+  }
+
+  return { recent, remember, markInquiry, forget, clear };
+}
+
+export function clearRecentContacts() {
+  recent.value = [];
 }

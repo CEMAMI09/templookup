@@ -12,6 +12,13 @@ const password = ref("");
 const showPassword = ref(false);
 const error = ref("");
 const pending = ref(false);
+const notice = ref(
+  route.query.reason === "inactive"
+    ? "You were signed out after 1 hour of inactivity."
+    : route.query.reason === "expired"
+      ? "You have been signed out. Sign in to continue."
+      : "",
+);
 
 async function submit() {
   error.value = "";
@@ -72,6 +79,7 @@ async function submit() {
           </button>
         </div>
       </div>
+      <p v-if="notice" class="mt-4 text-sm text-[#264859]" role="status">{{ notice }}</p>
       <p v-if="error" class="mt-4 text-sm text-[#8d2b2b]" role="alert">{{ error }}</p>
       <button
         type="submit"

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Mic, Plus, Search } from "lucide-vue-next";
+import { Mic, Plus, Search, X } from "lucide-vue-next";
 import type { Contact, ContactSearchResponse } from "@shared/types";
 import { api, ApiError } from "@/api/client";
 import { rememberContact } from "@/composables/contactCache";
 import { useRecentContacts } from "@/composables/recent";
 import { display, location } from "@/lib/format";
 import { transcribeAudio, voiceErrorMessage } from "@/lib/localRecognition";
+import { preloadOcrEngine } from "@/lib/ocr/engines";
 import AppHeader from "@/components/AppHeader.vue";
 import BadgeScan from "@/components/BadgeScan.vue";
 import UiAlert from "@/components/UiAlert.vue";
@@ -15,9 +16,9 @@ import UiButton from "@/components/UiButton.vue";
 
 const route = useRoute();
 const router = useRouter();
-const { recent, remember } = useRecentContacts();
+const { recent, remember, forget } = useRecentContacts();
 
-const query = ref(typeof route.query.q === "string" ? route.query.q : "");
+const query = ref("");
 const contacts = ref<Contact[]>([]);
 const total = ref<number | null>(null);
 const page = ref(1);
@@ -51,7 +52,6 @@ watch(query, (value) => {
     total.value = null;
     page.value = 1;
     error.value = "";
-    void router.replace({ query: value ? { q: value } : {} });
     return;
   }
   timer = setTimeout(() => void runSearch(value.trim(), 1), 300);
@@ -83,7 +83,6 @@ async function runSearch(value: string, nextPage: number) {
     hasMore.value = result.hasMore;
     searched.value = true;
     searchMs.value = Math.round(performance.now() - started);
-    void router.replace({ query: { q: value } });
   } catch (caught) {
     if (isAbort(caught) || generation !== searchGeneration) return;
     if (!append) contacts.value = [];
@@ -104,7 +103,12 @@ function submit() {
 
 function openContact(contact: Contact) {
   remember({ id: contact.id, name: contact.fullName });
-  void router.push({ name: "contact", params: { id: contact.id }, query: { q: query.value } });
+  void router.push({ name: "contact", params: { id: contact.id } });
+}
+
+function clearSearch() {
+  query.value = "";
+  input.value?.focus();
 }
 
 async function startVoice() {
@@ -173,8 +177,13 @@ function useRecognized(name: string) {
 }
 
 onMounted(() => {
+  preloadOcrEngine();
   window.addEventListener("keydown", onKeydown);
-  if (query.value.trim().length >= 2) void runSearch(query.value.trim(), 1);
+  if ("q" in route.query) {
+    const nextQuery = { ...route.query };
+    delete nextQuery.q;
+    void router.replace({ query: nextQuery });
+  }
 });
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", onKeydown);
@@ -200,8 +209,19 @@ onBeforeUnmount(() => {
             type="search"
             placeholder="Search by name, email, or phone..."
             aria-label="Search by name, email, or phone"
-            class="h-12 w-full rounded-md border border-line bg-surface pr-12 pl-10 text-base outline-none focus:border-brand"
+            class="h-12 w-full rounded-md border border-line bg-surface pl-10 text-base outline-none focus:border-brand"
+            :class="speechSupported ? (query ? 'pr-20' : 'pr-12') : query ? 'pr-12' : 'pr-3'"
           />
+          <button
+            v-if="query"
+            type="button"
+            class="absolute top-1 inline-flex size-10 cursor-pointer items-center justify-center rounded-md text-ink hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-brand"
+            :class="speechSupported ? 'right-11' : 'right-1'"
+            aria-label="Clear search"
+            @click="clearSearch"
+          >
+            <X class="size-4" aria-hidden="true" />
+          </button>
           <button
             v-if="speechSupported"
             type="button"
@@ -226,7 +246,7 @@ onBeforeUnmount(() => {
         </p>
         <span v-else />
         <RouterLink
-          :to="{ name: 'contact-create', query: query.trim() ? { q: query.trim() } : {} }"
+          :to="{ name: 'contact-create' }"
           class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-brand-strong px-3.5 text-sm font-bold text-on-brand sm:w-auto"
         >
           <Plus class="size-4" aria-hidden="true" />
@@ -266,10 +286,18 @@ onBeforeUnmount(() => {
       <div v-else-if="recent.length" class="mt-8">
         <h2 class="text-sm font-bold text-muted">Recent this session</h2>
         <ul class="mt-2 divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
-          <li v-for="item in recent" :key="item.id">
-            <button type="button" class="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-surface-muted" @click="router.push({ name: 'contact', params: { id: item.id }, query: query ? { q: query } : {} })">
-              <span class="font-bold">{{ item.name }}</span>
-              <span v-if="item.inquirySaved" class="text-xs font-bold text-success">Inquiry saved</span>
+          <li v-for="item in recent" :key="item.id" class="flex items-center">
+            <button type="button" class="flex min-w-0 flex-1 items-center justify-between px-4 py-3 text-left hover:bg-surface-muted" @click="router.push({ name: 'contact', params: { id: item.id } })">
+              <span class="truncate font-bold">{{ item.name }}</span>
+              <span v-if="item.inquirySaved" class="ml-3 shrink-0 text-xs font-bold text-success">Inquiry saved</span>
+            </button>
+            <button
+              type="button"
+              class="mr-2 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted hover:bg-surface-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-brand"
+              :aria-label="`Remove ${item.name} from recent`"
+              @click="forget(item.id)"
+            >
+              <X class="size-4" aria-hidden="true" />
             </button>
           </li>
         </ul>

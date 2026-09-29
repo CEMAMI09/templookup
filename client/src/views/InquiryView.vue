@@ -117,10 +117,6 @@ async function save() {
   }
 }
 
-function searchQuery() {
-  return typeof route.query.q === "string" && route.query.q ? { q: route.query.q } : {};
-}
-
 onMounted(load);
 </script>
 
@@ -136,7 +132,7 @@ onMounted(load);
           <span v-if="saved.inquiry.noteId" class="mt-1 block">Reference {{ saved.inquiry.noteId }}</span>
           <span v-if="saved.inquiry.verified === false" class="mt-1 block">The save was accepted. History may take a moment to refresh.</span>
         </UiAlert>
-        <UiButton class="mt-4" @click="router.push({ name: 'contact', params: { id: contact.id }, query: { ...searchQuery(), saved: '1' } })">
+        <UiButton class="mt-4" @click="router.push({ name: 'contact', params: { id: contact.id }, query: { saved: '1' } })">
           View contact
         </UiButton>
       </template>
@@ -245,7 +241,7 @@ onMounted(load);
         <UiAlert v-if="saveError" tone="error" @close="saveError = ''">{{ saveError }}</UiAlert>
         <div class="flex gap-3">
           <UiButton type="submit" class="lg:min-h-14 lg:px-6 lg:text-lg" :disabled="pending">{{ pending ? "Saving…" : "Save inquiry" }}</UiButton>
-          <UiButton variant="ghost" class="lg:min-h-14 lg:px-6 lg:text-lg" :disabled="pending" @click="router.push({ name: 'contact', params: { id: contact.id }, query: searchQuery() })">Cancel</UiButton>
+          <UiButton variant="ghost" class="lg:min-h-14 lg:px-6 lg:text-lg" :disabled="pending" @click="router.push({ name: 'contact', params: { id: contact.id } })">Cancel</UiButton>
         </div>
       </form>
       <div v-else class="mt-6 h-40 animate-pulse rounded-lg bg-surface" />

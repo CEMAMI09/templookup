@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import { api, ApiError } from "@/api/client";
+import { clearRecentContacts } from "@/composables/recent";
 
 export type StaffSession = {
   name: string;
@@ -21,7 +22,12 @@ const staffConfigured = ref(true);
 let pending: Promise<void> | null = null;
 
 export function useSession() {
-  return { staff, ready, crmMode, fields, staffConfigured, restore, login, logout };
+  return { staff, ready, crmMode, fields, staffConfigured, restore, login, logout, clearLocalSession };
+}
+
+export function clearLocalSession() {
+  staff.value = null;
+  clearRecentContacts();
 }
 
 export async function restore() {
@@ -60,6 +66,10 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout() {
-  await api("/api/auth/logout", { method: "POST" });
-  staff.value = null;
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } catch {
+    // The server session may already be gone. Local sign-out still has to finish.
+  }
+  clearLocalSession();
 }

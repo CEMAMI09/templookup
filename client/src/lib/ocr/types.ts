@@ -27,7 +27,7 @@ export interface OcrResult {
 export interface OcrEngine {
   readonly id: OcrEngineId;
   initialize(): Promise<{ elapsedMs: number }>;
-  recognize(image: Blob): Promise<OcrResult>;
+  recognize(image: Blob | HTMLCanvasElement | ImageBitmap): Promise<OcrResult>;
   dispose(): Promise<void>;
 }
 

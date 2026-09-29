@@ -24,7 +24,6 @@ const notice = ref("");
 const historyDismissed = ref(false);
 
 const id = () => String(route.params.id);
-const backQuery = () => (typeof route.query.q === "string" && route.query.q ? { q: route.query.q } : {});
 
 async function load() {
   const cached = previewContact(id());
@@ -61,7 +60,7 @@ onMounted(load);
   <div class="min-h-screen">
     <AppHeader />
     <main class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
-      <button type="button" class="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-brand-strong" @click="router.push({ name: 'search', query: backQuery() })">
+      <button type="button" class="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-brand-strong" @click="router.push({ name: 'search' })">
         <ArrowLeft class="size-4" aria-hidden="true" />
         Back to search
       </button>
@@ -82,8 +81,8 @@ onMounted(load);
             <p v-if="contact.title" class="mt-1 text-muted">{{ contact.title }}</p>
           </div>
           <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
-            <UiButton @click="router.push({ name: 'inquiry', params: { id: contact.id }, query: backQuery() })">Start inquiry</UiButton>
-            <UiButton variant="secondary" @click="router.push({ name: 'contact-edit', params: { id: contact.id }, query: backQuery() })">Edit contact</UiButton>
+            <UiButton @click="router.push({ name: 'inquiry', params: { id: contact.id } })">Start inquiry</UiButton>
+            <UiButton variant="secondary" @click="router.push({ name: 'contact-edit', params: { id: contact.id } })">Edit contact</UiButton>
             <a :href="cotoUrl" target="_blank" rel="noreferrer" class="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-brand-strong hover:bg-brand-soft">
               Open in COTO
               <ExternalLink class="size-4" aria-hidden="true" />

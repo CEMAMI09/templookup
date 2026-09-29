@@ -9,12 +9,28 @@ export interface FrameSample {
 
 const SAMPLE_WIDTH = 160;
 
+/** Longest side sent to the reader. The detector resizes to this, so a larger capture only adds work. */
+export const OCR_MAX_SIDE = 960;
+
+export function fittedSize(width: number, height: number, maxSide = OCR_MAX_SIDE): { width: number; height: number } {
+  if (width <= 0 || height <= 0) return { width: 1, height: 1 };
+  const longSide = Math.max(width, height);
+  const scale = longSide > maxSide ? maxSide / longSide : 1;
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+let sampleCanvas: HTMLCanvasElement | null = null;
+
 export function sampleFrame(source: CanvasImageSource, width: number, height: number, previous: Uint8ClampedArray | null): FrameSample | null {
-  if (width < 32 || height < 32) return null;
+  if (width < 32 || height < 32 || typeof document === "undefined") return null;
   const sampleHeight = Math.max(1, Math.round((SAMPLE_WIDTH * height) / width));
-  const canvas = document.createElement("canvas");
-  canvas.width = SAMPLE_WIDTH;
-  canvas.height = sampleHeight;
+  sampleCanvas ??= document.createElement("canvas");
+  const canvas = sampleCanvas;
+  if (canvas.width !== SAMPLE_WIDTH) canvas.width = SAMPLE_WIDTH;
+  if (canvas.height !== sampleHeight) canvas.height = sampleHeight;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return null;
   context.drawImage(source, 0, 0, SAMPLE_WIDTH, sampleHeight);

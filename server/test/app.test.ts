@@ -114,6 +114,14 @@ describe("content security policy", () => {
   });
 });
 
+describe("sign out", () => {
+  it("clears an already expired session", async () => {
+    const response = await request(app).post("/api/auth/logout").set("X-Requested-With", "evoq");
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ ok: true });
+  });
+});
+
 describe("API access", () => {
   it("blocks contact search without a staff session and hides the token", async () => {
     const response = await request(app).get("/api/contacts/search?q=Jordan");
